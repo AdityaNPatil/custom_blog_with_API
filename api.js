@@ -37,6 +37,7 @@ Post.create({
 app.get("/posts", async (req, res) => {
     const allPosts = await Post.find({});
     // console.log(allPosts);
+    
     res.json(allPosts);
 })
 
@@ -59,10 +60,14 @@ app.get("/posts/:id", async (req, res) => {
 // Submit a new post -- add new document to db
 app.post("/posts" , async (req,res)=>{
     // console.log(req.body)
+
+    // get latest record -- array
+    const latestRecord = await Post.find().sort({ $natural: -1 })
+    console.log(latestRecord[0]);
     
     // Get data from index.js which it got from index.ejs using bodyParser
     const newPost = {
-        postId: await Post.countDocuments() +1,
+        postId: latestRecord[0].postId+1,
         title: req.body.title,
         content: req.body.content,
         author: req.body.author,
@@ -77,13 +82,14 @@ app.post("/posts" , async (req,res)=>{
 // Update existing post -- update document in db
 app.patch("/posts/:id" , async (req,res)=>{
     const userChosenID = parseInt(req.params["id"]);
+    const existingPost = await Post.findOne({ postId: userChosenID });
 
     const  updatedPost = await Post.updateOne({ postId: userChosenID }, {
         $set: {
             postId: userChosenID,
-            title: req.body.title,
-            content: req.body.content,
-            author: req.body.author,
+            title: req.body.title || existingPost.title,
+            content: req.body.content || existingPost.content,
+            author: req.body.author || existingPost.author,
             date: new Date()
         }
     })
